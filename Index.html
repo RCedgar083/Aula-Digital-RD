@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AULA DIGITAL RD: Dashboard Interactivo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Chosen Palette: Neutros Suaves (slate) con Acentos Azules (sky) -->
+    <!-- Application Structure Plan: He diseñado esto como un "dashboard de propuesta" temático de una sola página (SPA). Una barra de navegación fija permite saltar a las secciones clave: Inicio (un "hero" con la gran idea), El Problema (con una visualización de datos impactante), La Solución (un desglose de características), Impacto (cuadrantes de valor) y un Dashboard Simulado (para hacer tangible la "gestión por datos"). Esta estructura no lineal prioriza la exploración y la rápida comprensión de los pilares del proyecto. Las interacciones principales son el scroll y un filtro de gráfico en el dashboard simulado. -->
+    <!-- Visualization & Content Choices: 
+        1. Info: 1 de 4 adolescentes fuera (Problema). Goal: Informar/Impactar. Viz: Gráfico de Donut (Chart.js) + Tarjeta de Métrica (HTML/Tailwind). Interaction: Tooltip. Justification: Visualiza la escala del problema de forma inmediata. Library: Chart.js.
+        2. Info: Características Clave (IA, Offline, Portal) (Solución). Goal: Organizar/Informar. Viz: Tarjetas con iconos (HTML/Tailwind/Unicode). Interaction: Estático. Justification: Divide la solución compleja en componentes digeribles. Library: HTML/Tailwind.
+        3. Info: Concepto de Tablero MINERD (Impacto). Goal: Demostrar/Simular. Viz: Gráfico de Barras (Chart.js) + Tarjetas KPI (HTML/Tailwind). Interaction: Dropdown <select> para filtrar datos del gráfico (JS `updateChart`). Justification: Hace tangible y real la promesa de "gestión por datos". Library: Chart.js + Vanilla JS.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <style type="text/tailwindcss">
+        @tailwind base;
+        @tailwind components;
+        @tailwind utilities;
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+        }
+        
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 350px;
+        }
+
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+                max-height: 400px;
+            }
+        }
+        
+        .chart-container-bar {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        
+        @media (min-width: 768px) {
+            .chart-container-bar {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <nav class="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-sm shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+             <div class="flex-shrink-0 flex items-center">
+
+    <div class="flex items-center space-x-4">
+    <img src="imag/logo.png" 
+         alt="Logo Aula Digital RD" 
+         class="h-14 w-auto">
+    <h1 class="font-bold text-3xl text-sky-800">
+        Aula Digital <span class="text-red-600">RD</span>
+    </h1>
+</div>
+
+
+
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#inicio" class="text-slate-700 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Inicio</a>
+                        <a href="#problema" class="text-slate-700 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">El Problema</a>
+                        <a href="#solucion" class="text-slate-700 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">La Solución</a>
+                        <a href="#impacto" class="text-slate-700 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Impacto</a>
+                        <a href="#dashboard" class="text-slate-700 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
+                        <a href="#equipo" class="text-slate-700 hover:text-sky-700 px-3 py-2 rounded-md text-sm font-medium">Equipo</a>
+                        <a href="https://campus.inovaap.com/login/index.php" class="text-slate-700 hover:text-sky-700 block px-3 py-2 rounded-md text-base font-medium">Plataforma</a>
+                    </div>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-slate-400 hover:text-sky-700 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-sky-500">
+                        <span class="sr-only">Abrir menú</span>
+                        <svg class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                        <svg class="hidden h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="mobile-menu" class="md:hidden hidden">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#inicio" class="text-slate-700 hover:text-sky-700 block px-3 py-2 rounded-md text-base font-medium">Inicio</a>
+                <a href="#problema" class="text-slate-700 hover:text-sky-700 block px-3 py-2 rounded-md text-base font-medium">El Problema</a>
+                <a href="#solucion" class="text-slate-700 hover:text-sky-700 block px-3 py-2 rounded-md text-base font-medium">La Solución</a>
+                <a href="#impacto" class="text-slate-700 hover:text-sky-700 block px-3 py-2 rounded-md text-base font-medium">Impacto</a>
+                <a href="#dashboard" class="text-slate-700 hover:text-sky-700 block px-3 py-2 rounded-md text-base font-medium">Dashboard</a>
+                <a href="#equipo" class="text-slate-700 hover:text-sky-700 block px-3 py-2 rounded-md text-base font-medium">Equipo</a>
+                <a href="https://campus.inovaap.com/login/index.php" class="text-slate-700 hover:text-sky-700 block px-3 py-2 rounded-md text-base font-medium">Plataforma</a>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <section id="inicio" class="relative bg-sky-800 text-white pt-20 pb-28 md:pt-32 md:pb-36 text-center overflow-hidden">
+            <div class="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
+                <h1 class="text-4xl md:text-6xl font-bold tracking-tight">
+                    AULA DIGITAL RD
+                </h1>
+                <p class="mt-4 text-xl md:text-2xl text-sky-200">
+                    Educación Impulsada por Inteligencia Artificial y Resiliencia Territorial
+                </p>
+                <p class="mt-8 max-w-3xl mx-auto text-lg text-sky-100">
+                    Esta es una propuesta para crear una plataforma educativa integral que conecta a todos los estudiantes de la República Dominicana. Nuestra misión es garantizar acceso equitativo, personalizado y continuo al aprendizaje, sin importar la ubicación, la conectividad o las emergencias.
+                </p>
+            </div>
+            <div class="absolute inset-0 bg-sky-800 opacity-20" style="background-image: linear-gradient(to bottom, transparent, #0c4a6e), radial-gradient(circle at top left, rgba(14, 165, 233, 0.3), transparent 40%), radial-gradient(circle at bottom right, rgba(56, 189, 248, 0.3), transparent 40%);"></div>
+        </section>
+
+        <section id="problema" class="py-16 md:py-24 bg-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 class="text-3xl font-bold tracking-tight text-sky-800 sm:text-4xl">
+                        El Desafío Nacional
+                    </h2>
+                    <p class="mt-4 text-lg text-slate-600 max-w-3xl mx-auto">
+                        La educación dominicana enfrenta desafíos críticos que limitan el potencial de nuestros jóvenes. La deserción y la brecha digital no son solo estadísticas, son barreras reales.
+                    </p>
+                </div>
+                <div class="mt-16 grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+                    <div class="chart-container">
+                        <canvas id="desertionChart"></canvas>
+                        <p class="text-center text-sm text-slate-500 mt-2">Fuente: Propuesta (Datos MINERD)</p>
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-semibold text-slate-900">La Realidad: 1 de cada 4</h3>
+                        <p class="mt-3 text-slate-600">
+                            Aproximadamente **1 de cada 4 adolescentes (25%)** entre 15 y 17 años no asiste a la escuela. Este es el problema central que buscamos resolver.
+                        </p>
+                        <div class="mt-6 space-y-4">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0">
+                                    <span class="inline-flex items-center justify-center h-10 w-10 rounded-full bg-red-100 text-red-700 font-bold text-xl">!</span>
+                                </div>
+                                <div class="ml-4">
+                                    <h4 class="text-lg font-medium text-slate-800">Vulnerabilidad ante Emergencias</h4>
+                                    <p class="text-slate-600">Pandemias, huracanes o huelgas interrumpen la continuidad educativa, afectando desproporcionadamente a los más vulnerables.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0">
+                                    <span class="inline-flex items-center justify-center h-10 w-10 rounded-full bg-blue-100 text-blue-700 font-bold text-xl">📶</span>
+                                </div>
+                                <div class="ml-4">
+                                    <h4 class="text-lg font-medium text-slate-800">Brecha Digital y Territorial</h4>
+                                    <p class="text-slate-600">El acceso a internet estable y a recursos de calidad no es uniforme, creando una profunda desigualdad entre zonas urbanas y rurales.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="solucion" class="py-16 md:py-24 bg-slate-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 class="text-3xl font-bold tracking-tight text-sky-800 sm:text-4xl">
+                        Una Solución Integral
+                    </h2>
+                    <p class="mt-4 text-lg text-slate-600 max-w-3xl mx-auto">
+                        Aula Digital RD no es solo un portal, es un ecosistema de aprendizaje diseñado para la equidad, la personalización y la resiliencia.
+                    </p>
+                </div>
+                <div class="mt-16 grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <div class="bg-white p-6 rounded-xl shadow-lg transform transition hover:scale-105 duration-300">
+                        <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-sky-100 text-sky-700 text-3xl font-bold">
+                            💻
+                        </div>
+                        <h3 class="mt-5 text-xl font-semibold text-center text-slate-900">Portal Nacional Unificado</h3>
+                        <p class="mt-2 text-sm text-slate-600 text-center">
+                            Organiza a todos los estudiantes por provincia, municipio y centro educativo, creando un espacio virtual para cada escuela.
+                        </p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-lg transform transition hover:scale-105 duration-300">
+                        <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-sky-100 text-sky-700 text-3xl font-bold">
+                            🤖
+                        </div>
+                        <h3 class="mt-5 text-xl font-semibold text-center text-slate-900">Tutor IA 24/7</h3>
+                        <p class="mt-2 text-sm text-slate-600 text-center">
+                            Un agente de IA que actúa como tutor digital, respondiendo preguntas y guiando el aprendizaje del estudiante a cualquier hora.
+                        </p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-lg transform transition hover:scale-105 duration-300">
+                        <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-sky-100 text-sky-700 text-3xl font-bold">
+                            🔌
+                        </div>
+                        <h3 class="mt-5 text-xl font-semibold text-center text-slate-900">Acceso Offline y Resiliente</h3>
+                        <p class="mt-2 text-sm text-slate-600 text-center">
+                            Garantiza la continuidad educativa en zonas rurales o durante emergencias mediante memorias USB o servidores comunitarios.
+                        </p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-lg transform transition hover:scale-105 duration-300">
+                        <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-sky-100 text-sky-700 text-3xl font-bold">
+                            👩‍🏫
+                        </div>
+                        <h3 class="mt-5 text-xl font-semibold text-center text-slate-900">Apoyo Docente</h3>
+                        <p class="mt-2 text-sm text-slate-600 text-center">
+                            La IA fortalece al maestro, permitiéndole subir contenidos, personalizar la enseñanza y cubrir vacíos en asignaturas especializadas.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="impacto" class="py-16 md:py-24 bg-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 class="text-3xl font-bold tracking-tight text-sky-800 sm:text-4xl">
+                        Impacto Estratégico
+                    </h2>
+                    <p class="mt-4 text-lg text-slate-600 max-w-3xl mx-auto">
+                        El proyecto está diseñado para generar valor medible en cuatro áreas clave para el desarrollo nacional.
+                    </p>
+                </div>
+                <div class="mt-16 grid md:grid-cols-2 gap-8">
+                    <div class="bg-slate-50 p-6 rounded-lg border border-slate-200">
+                        <h3 class="text-2xl font-semibold text-sky-700">Impacto Económico</h3>
+                        <ul class="mt-4 space-y-2 list-disc list-inside text-slate-600">
+                            <li>Optimización de recursos humanos (IA cubre déficit docente).</li>
+                            <li>Prevención de pérdidas en capital humano.</li>
+                            <li>Ahorro futuro en programas sociales.</li>
+                        </ul>
+                    </div>
+                    <div class="bg-slate-50 p-6 rounded-lg border border-slate-200">
+                        <h3 class="text-2xl font-semibold text-sky-700">Impacto Territorial y de Equidad</h3>
+                        <ul class="mt-4 space-y-2 list-disc list-inside text-slate-600">
+                            <li>Acceso inclusivo para zonas rurales (offline).</li>
+                            <li>Reducción de la brecha digital educativa.</li>
+                            <li>Enfoque territorial inteligente (datos por provincia).</li>
+                        </ul>
+                    </div>
+                    <div class="bg-slate-50 p-6 rounded-lg border border-slate-200">
+                        <h3 class="text-2xl font-semibold text-sky-700">Impacto Institucional (MINERD)</h3>
+                        <ul class="mt-4 space-y-2 list-disc list-inside text-slate-600">
+                            <li>Gestión educativa basada en datos en tiempo real.</li>
+                            <li>Tablero centralizado para monitorear riesgos.</li>
+                            <li>Fortalecimiento del rol docente con herramientas de IA.</li>
+                        </ul>
+                    </div>
+                    <div class="bg-slate-50 p-6 rounded-lg border border-slate-200">
+                        <h3 class="text-2xl font-semibold text-sky-700">Impacto Social</h3>
+                        <ul class="mt-4 space-y-2 list-disc list-inside text-slate-600">
+                            <li>Reducción de la deserción escolar.</li>
+                            <li>Garantía de continuidad educativa ante crisis.</li>
+                            <li>Fomento de una cultura de aprendizaje personalizado.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="dashboard" class="py-16 md:py-24 bg-sky-900 text-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 class="text-3xl font-bold tracking-tight sm:text-4xl">
+                        Simulador: Gestión Basada en Datos
+                    </h2>
+                    <p class="mt-4 text-lg text-sky-200 max-w-3xl mx-auto">
+                        Así es como el MINERD podría visualizar el progreso nacional. La IA permite monitorear el sistema educativo en tiempo real y actuar de forma preventiva.
+                    </p>
+                </div>
+                <div class="mt-12 max-w-4xl mx-auto">
+                    <div class="mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <div class="w-full sm:w-auto">
+                            <label for="regionFilter" class="block text-sm font-medium text-sky-100">Filtrar por Región:</label>
+                            <select id="regionFilter" class="mt-1 block w-full sm:w-64 rounded-md border-gray-300 shadow-sm focus:border-sky-500 focus:ring-sky-500 text-slate-900">
+                                <option value="nacional">Promedio Nacional</option>
+                                <option value="mts">Piloto: María T. Sánchez</option>
+                                <option value="sur">Región Sur</option>
+                                <option value="cibao">Región Cibao</option>
+                            </select>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4 w-full sm:w-auto">
+                            <div class="bg-sky-800 p-4 rounded-lg text-center">
+                                <div class="text-2xl font-bold" id="kpi-asistencia">--%</div>
+                                <div class="text-sm text-sky-200">Asistencia Virtual</div>
+                            </div>
+                            <div class="bg-sky-800 p-4 rounded-lg text-center">
+                                <div class="text-2xl font-bold text-yellow-300" id="kpi-riesgo">--%</div>
+                                <div class="text-sm text-sky-200">Riesgo de Abandono</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white p-4 md:p-6 rounded-lg shadow-2xl">
+                        <h3 class="text-lg font-medium text-slate-900 text-center mb-4">Progreso Académico por Asignatura</h3>
+                        <div class="chart-container-bar">
+                            <canvas id="progresoChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="equipo" class="py-16 md:py-24 bg-slate-50">
+            <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 class="text-3xl font-bold tracking-tight text-sky-800 sm:text-4xl">
+                        Equipo 
+                    </h2>
+                    <p class="mt-4 text-lg text-slate-600">
+                        Impulsando esta idea desde la Región de María Trinidad Sánchez.
+                    </p>
+                </div>
+               
+
+<div class="mt-16 grid sm:grid-cols-3 gap-8">
+    <!-- Juan Luis Alcántara Nolasco -->
+    <div class="bg-white p-6 rounded-lg shadow-lg text-center">
+        <img src="imag/juan.jpeg" 
+             alt="Juan Luis Alcántara Nolasco" 
+             class="h-24 w-24 rounded-full object-cover mx-auto shadow-md">
+        <h3 class="mt-4 text-xl font-semibold text-slate-900">Juan Luis Alcántara Nolasco</h3>
+        <p class="text-sky-700">Representante</p>
+    </div>
+
+    <!-- Erik Yadiel Ventura Hernández -->
+    <div class="bg-white p-6 rounded-lg shadow-lg text-center">
+        <img src="imag/erik.jpeg" 
+             alt="Erik Yadiel Ventura Hernández" 
+             class="h-24 w-24 rounded-full object-cover mx-auto shadow-md">
+        <h3 class="mt-4 text-xl font-semibold text-slate-900">Erik Yadiel Ventura Hernández</h3>
+        <p class="text-sky-700">Integrante</p>
+    </div>
+
+    <!-- Edgar David Rodríguez Castillo -->
+    <div class="bg-white p-6 rounded-lg shadow-lg text-center">
+        <img src="imag/edgar.png" 
+             alt="Edgar David Rodríguez Castillo" 
+             class="h-24 w-24 rounded-full object-cover mx-auto shadow-md">
+        <h3 class="mt-4 text-xl font-semibold text-slate-900">Edgar David Rodríguez Castillo</h3>
+        <p class="text-sky-700">Integrante</p>
+    </div>
+</div>
+
+
+
+
+
+
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-slate-800 text-slate-300 py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p>&copy; 2025 Aula Digital RD. Una propuesta para República de Ideas.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const menuLinks = mobileMenu.querySelectorAll('a');
+
+            mobileMenuButton.addEventListener('click', () => {
+                const isOpen = mobileMenu.classList.toggle('hidden');
+                mobileMenuButton.querySelector('svg.block').classList.toggle('hidden', !isOpen);
+                mobileMenuButton.querySelector('svg.hidden').classList.toggle('hidden', isOpen);
+            });
+
+            menuLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    mobileMenu.classList.add('hidden');
+                    mobileMenuButton.querySelector('svg.block').classList.remove('hidden');
+                    mobileMenuButton.querySelector('svg.hidden').classList.add('hidden');
+                });
+            });
+
+            document.querySelectorAll('nav a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    if (this.getAttribute('href') !== '#') {
+                        e.preventDefault();
+                        document.querySelector(this.getAttribute('href')).scrollIntoView({
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+
+            const ctxDesertion = document.getElementById('desertionChart')?.getContext('2d');
+            if (ctxDesertion) {
+                new Chart(ctxDesertion, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Fuera del Sistema (25%)', 'En el Sistema (75%)'],
+                        datasets: [{
+                            data: [25, 75],
+                            backgroundColor: [
+                                'rgb(239, 68, 68)',
+                                'rgb(34, 197, 94)'
+                            ],
+                            borderColor: [
+                                'rgb(255, 255, 255)',
+                                'rgb(255, 255, 255)'
+                            ],
+                            borderWidth: 2,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '60%',
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed !== null) {
+                                            label += context.parsed + '%';
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            const chartDataStore = {
+                nacional: {
+                    labels: ['Matemáticas', 'Lengua Española', 'Ciencias Sociales', 'Ciencias Naturales'],
+                    data: [55, 68, 72, 61],
+                    kpiAsistencia: '82%',
+                    kpiRiesgo: '18%'
+                },
+                mts: {
+                    labels: ['Matemáticas', 'Lengua Española', 'Ciencias Sociales', 'Ciencias Naturales'],
+                    data: [62, 70, 75, 65],
+                    kpiAsistencia: '88%',
+                    kpiRiesgo: '12%'
+                },
+                sur: {
+                    labels: ['Matemáticas', 'Lengua Española', 'Ciencias Sociales', 'Ciencias Naturales'],
+                    data: [48, 60, 65, 55],
+                    kpiAsistencia: '75%',
+                    kpiRiesgo: '25%'
+                },
+                cibao: {
+                    labels: ['Matemáticas', 'Lengua Española', 'Ciencias Sociales', 'Ciencias Naturales'],
+                    data: [58, 72, 74, 64],
+                    kpiAsistencia: '85%',
+                    kpiRiesgo: '15%'
+                }
+            };
+            
+            const kpiAsistenciaEl = document.getElementById('kpi-asistencia');
+            const kpiRiesgoEl = document.getElementById('kpi-riesgo');
+            const ctxProgreso = document.getElementById('progresoChart')?.getContext('2d');
+            let progresoChart;
+
+            function updateDashboard(region) {
+                const data = chartDataStore[region];
+                
+                if (kpiAsistenciaEl) kpiAsistenciaEl.textContent = data.kpiAsistencia;
+                if (kpiRiesgoEl) kpiRiesgoEl.textContent = data.kpiRiesgo;
+
+                if (progresoChart) {
+                    progresoChart.data.labels = data.labels;
+                    progresoChart.data.datasets[0].data = data.data;
+                    progresoChart.update();
+                }
+            }
+
+            if (ctxProgreso) {
+                progresoChart = new Chart(ctxProgreso, {
+                    type: 'bar',
+                    data: {
+                        labels: chartDataStore.nacional.labels,
+                        datasets: [{
+                            label: 'Progreso Académico Promedio (%)',
+                            data: chartDataStore.nacional.data,
+                            backgroundColor: 'rgba(14, 165, 233, 0.6)',
+                            borderColor: 'rgba(14, 165, 233, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: {
+                                    color: '#334155'
+                                },
+                                grid: {
+                                    color: '#e2e8f0'
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    color: '#334155'
+                                },
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `Progreso: ${context.parsed.y}%`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+                
+                updateDashboard('nacional');
+
+                document.getElementById('regionFilter').addEventListener('change', (e) => {
+                    updateDashboard(e.target.value);
+                });
+            }
+        });
+    </script>
+
+</body>
+</html>
